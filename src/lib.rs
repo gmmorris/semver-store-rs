@@ -1,0 +1,241 @@
+mod node;
+
+pub struct SemverStore<T> {
+    tree: node::Node<T>,
+}
+
+impl<T> SemverStore<T> {
+    pub fn new() -> Self {
+        SemverStore {
+            tree: node::Node::new(0),
+        }
+    }
+
+    pub fn set(&mut self, version: String, store: T) {
+        let semver: Vec<&str> = version.split('.').collect();
+        let mut current_node = &mut self.tree;
+        for v in semver {
+            let version_number = v.parse::<u32>().unwrap();
+            let node = node::Node::new(version_number);
+            current_node.add_child(node);
+            current_node = current_node.get_child(version_number).unwrap();
+        }
+        current_node.set_store(store);
+    }
+
+    pub fn get(&mut self, version: String) -> Option<&T> {
+        let semver: Vec<&str> = version.split('.').collect();
+        let mut current_node = &mut self.tree;
+        for v in semver {
+            let version_number = v.parse::<u32>().unwrap();
+            let child = current_node.get_child(version_number);
+            if child.is_none() {
+                return None;
+            }
+            current_node = child.unwrap();
+        }
+        current_node.store.as_ref()
+    }
+
+    pub fn del(&mut self, version: String) -> bool {
+        let semver: Vec<&str> = version.split('.').collect();
+        let major = semver.get(0).unwrap();
+        let minor = semver.get(1).unwrap();
+        let patch = semver.get(2);
+
+        let major_node = self.tree.get_child(int(&major));
+
+        if major_node.is_none() {
+            return false;
+        }
+
+        if let &"x" = minor {
+            return self.tree.remove_child(int(&major));
+        }
+
+        if patch.is_none() {
+            let major_node = self.tree.get_child(int(&major)).unwrap();
+            let removed = major_node.remove_child(int(&minor));
+
+            if removed == false {
+                return false;
+            }
+
+            // if we removed the last child, we should
+            // also remove the parent node
+            if major_node.children.len() == 0 {
+                self.tree.remove_child(int(&major));
+            }
+            return true;
+        }
+
+        let patch = patch.unwrap();
+
+        // TODO: remove code duplication
+        if let &"x" = patch {
+            let major_node = self.tree.get_child(int(&major)).unwrap();
+            let removed = major_node.remove_child(int(&minor));
+
+            if removed == false {
+                return false;
+            }
+
+            // if we removed the last child, we should
+            // also remove the parent node
+            if major_node.children.len() == 0 {
+                self.tree.remove_child(int(&major));
+            }
+            return true;
+        }
+
+        let minor_node = self
+            .tree
+            .get_child(int(&major))
+            .unwrap()
+            .get_child(int(&minor))
+            .unwrap();
+
+        let removed = minor_node.remove_child(int(&patch));
+        if removed == false {
+            return false;
+        }
+
+        // if we removed the last child, we should
+        // also remove the parent node
+        if minor_node.children.len() == 0 {
+            self.tree
+                .get_child(int(&major))
+                .unwrap()
+                .remove_child(int(&minor));
+        }
+
+        let major_node = self.tree.get_child(int(&major)).unwrap();
+        if major_node.children.len() == 0 {
+            self.tree.remove_child(int(&major));
+        }
+
+        return true;
+    }
+
+    pub fn empty(&mut self) {
+        unimplemented!()
+    }
+}
+
+fn int(str: &str) -> u32 {
+    str.parse::<u32>().unwrap()
+}
+
+#[cfg(test)]
+mod node_tests {
+    use super::SemverStore;
+
+    #[test]
+    fn create_a_store() {
+        let store = SemverStore::<i32>::new();
+        assert_eq!(store.tree.prefix, 0);
+    }
+
+    #[test]
+    fn store_an_integer() {
+        let mut store = SemverStore::<i32>::new();
+        store.set("1.0.0".to_string(), 1);
+        assert_eq!(store.get("1.0.0".to_string()).unwrap(), &1);
+    }
+
+    #[test]
+    fn not_found() {
+        let mut store = SemverStore::<i32>::new();
+        store.set("1.0.0".to_string(), 1);
+        assert_eq!(store.get("1.2.0".to_string()), None);
+    }
+
+    #[test]
+    fn store_multiple_values() {
+        let mut store = SemverStore::<i32>::new();
+        store.set("1.0.0".to_string(), 1);
+        store.set("1.1.0".to_string(), 2);
+        store.set("1.2.0".to_string(), 3);
+        store.set("1.3.0".to_string(), 4);
+
+        // the node with prefix `1` should have 4 children
+        assert_eq!(store.tree.children[0].children.len(), 4);
+        assert_eq!(store.get("1.0.0".to_string()).unwrap(), &1);
+        assert_eq!(store.get("1.1.0".to_string()).unwrap(), &2);
+        assert_eq!(store.get("1.2.0".to_string()).unwrap(), &3);
+        assert_eq!(store.get("1.3.0".to_string()).unwrap(), &4);
+    }
+
+    #[test]
+    fn store_multiple_values_and_multiple_prefixes() {
+        let mut store = SemverStore::<i32>::new();
+        store.set("1.1.0".to_string(), 11);
+        store.set("1.2.0".to_string(), 12);
+        store.set("1.3.0".to_string(), 13);
+
+        store.set("2.0.0".to_string(), 21);
+        store.set("2.1.0".to_string(), 22);
+        store.set("2.2.0".to_string(), 23);
+        store.set("2.3.0".to_string(), 24);
+
+        assert_eq!(store.tree.children[0].children.len(), 3);
+        assert_eq!(store.tree.children[1].children.len(), 4);
+
+        assert_eq!(store.get("1.1.0".to_string()).unwrap(), &11);
+        assert_eq!(store.get("1.2.0".to_string()).unwrap(), &12);
+        assert_eq!(store.get("1.3.0".to_string()).unwrap(), &13);
+
+        assert_eq!(store.get("2.0.0".to_string()).unwrap(), &21);
+        assert_eq!(store.get("2.1.0".to_string()).unwrap(), &22);
+        assert_eq!(store.get("2.2.0".to_string()).unwrap(), &23);
+        assert_eq!(store.get("2.3.0".to_string()).unwrap(), &24);
+    }
+
+    #[test]
+    fn delete_stored_values() {
+        let mut store = SemverStore::<i32>::new();
+        store.set("1.0.0".to_string(), 1);
+        store.set("1.1.0".to_string(), 2);
+        store.set("1.2.0".to_string(), 3);
+        store.set("1.3.0".to_string(), 4);
+
+        assert_eq!(store.tree.children[0].children.len(), 4);
+        assert_eq!(store.del("1.2.0".to_string()), true);
+        assert_eq!(store.tree.children[0].children.len(), 3);
+    }
+
+    #[test]
+    fn delete_minor_wildcard_shortcut() {
+        let mut store = SemverStore::<i32>::new();
+        store.set("1.0.0".to_string(), 1);
+        store.set("1.1.0".to_string(), 2);
+        store.set("1.1.1".to_string(), 3);
+        store.set("1.1.2".to_string(), 4);
+        store.set("1.2.0".to_string(), 5);
+        store.set("1.2.1".to_string(), 6);
+        store.set("1.2.2".to_string(), 7);
+
+        assert_eq!(store.tree.children[0].children.len(), 3);
+        assert_eq!(store.del("1.1.x".to_string()), true);
+        assert_eq!(store.tree.children[0].children.len(), 2);
+        assert_eq!(store.del("1.2".to_string()), true);
+        assert_eq!(store.tree.children[0].children.len(), 1);
+    }
+
+    #[test]
+    fn delete_major_wildcard_shortcut() {
+        let mut store = SemverStore::<i32>::new();
+        store.set("1.0.0".to_string(), 1);
+        store.set("1.1.0".to_string(), 2);
+        store.set("2.0.0".to_string(), 3);
+        store.set("2.1.0".to_string(), 4);
+        store.set("3.0.0".to_string(), 5);
+        store.set("3.1.0".to_string(), 6);
+
+        assert_eq!(store.tree.children.len(), 3);
+        assert_eq!(store.del("1.x".to_string()), true);
+        assert_eq!(store.tree.children.len(), 2);
+        assert_eq!(store.del("2.x".to_string()), true);
+        assert_eq!(store.tree.children.len(), 1);
+    }
+}
