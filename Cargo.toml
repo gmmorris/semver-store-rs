@@ -1,0 +1,7 @@
+[package]
+name = "semver-store"
+version = "0.1.0"
+authors = ["delvedor <tommydelved@gmail.com>"]
+edition = "2018"
+
+[dependencies]
