@@ -1,5 +1,7 @@
 # semver-store
 
+[![Crates.io](https://img.shields.io/crates/v/semver-store)](https://crates.io/crates/semver-store)  ![Crates.io](https://img.shields.io/badge/maintenance-experimental-blue.svg)
+
 An HashMap structure that uses [semver](https://semver.org) strings as keys.
 
 # Install
