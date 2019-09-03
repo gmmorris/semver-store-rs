@@ -35,18 +35,10 @@ impl<T> SemverStore<T> {
         }
 
         if let &"x" = minor {
-            let minor_node = major_node.unwrap().get_max_child();
-            if minor_node.is_none() {
-                return None;
-            }
-            match minor_node.unwrap().get_max_child() {
-                Some(patch_node) => {
-                    return patch_node.store.as_ref();
-                }
-                None => {
-                    return None;
-                }
-            }
+            return major_node
+                .and_then(|major|major.get_max_child())
+                .and_then(|minor|minor.get_max_child())
+                .and_then(|patch|patch.store.as_ref())
         }
 
         let minor_node = major_node.unwrap().get_child(int(&minor));
