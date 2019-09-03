@@ -1,6 +1,8 @@
+use std::collections::HashMap;
+
 pub struct Node<T> {
     pub prefix: u32,
-    pub children: Vec<Node<T>>,
+    pub children: HashMap<u32, Node<T>>,
     pub store: Option<T>,
 }
 
@@ -8,50 +10,26 @@ impl<T> Node<T> {
     pub fn new(prefix: u32) -> Self {
         Node {
             prefix,
-            children: Vec::new(),
+            children: HashMap::new(),
             store: None,
         }
     }
 
     pub fn get_child(&mut self, prefix: u32) -> Option<&mut Node<T>> {
-        for child in &mut self.children {
-            if child.prefix == prefix {
-                return Some(child);
-            }
-        }
-
-        None
+        self.children.get_mut(&prefix)
     }
 
     pub fn add_child(&mut self, node: Node<T>) {
-        let mut exist = false;
-        for child in &self.children {
-            if child.prefix == node.prefix {
-                exist = true;
-                break;
-            }
-        }
-        if exist == false {
-            &self.children.push(node);
+        if self.children.contains_key(&node.prefix) == false {
+            self.children.insert(node.prefix, node);
         }
     }
 
     pub fn remove_child(&mut self, prefix: u32) -> bool {
-        let mut removed = false;
-        let mut index: usize = 0;
-        let len = self.children.len();
-        while index < len {
-            if self.children[index].prefix == prefix {
-                removed = true;
-                break;
-            }
-            index += 1;
+        match self.children.remove(&prefix) {
+            Some(_node) => true,
+            None => false
         }
-
-        if removed == true {
-            &self.children.remove(index);
-        }
-        removed
     }
 
     pub fn set_store(&mut self, store: T) {
