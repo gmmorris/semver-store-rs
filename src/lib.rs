@@ -24,16 +24,50 @@ impl<T> SemverStore<T> {
 
     pub fn get(&mut self, version: String) -> Option<&T> {
         let semver: Vec<&str> = version.split('.').collect();
-        let mut current_node = &mut self.tree;
-        for v in semver {
-            let version_number = v.parse::<u32>().unwrap();
-            let child = current_node.get_child(version_number);
-            if child.is_none() {
+        let major = semver.get(0).unwrap();
+        let minor = semver.get(1).unwrap();
+        let patch = semver.get(2);
+
+        let major_node = self.tree.get_child(int(&major));
+
+        if major_node.is_none() {
+            return None;
+        }
+
+        if let &"x" = minor {
+            let minor_node = major_node.unwrap().get_max_child();
+            if minor_node.is_none() {
                 return None;
             }
-            current_node = child.unwrap();
+            match minor_node.unwrap().get_max_child() {
+                Some(patch_node) => { return patch_node.store.as_ref(); },
+                None => { return None; }
+            }
         }
-        current_node.store.as_ref()
+
+        let minor_node = major_node.unwrap().get_child(int(&minor));
+        if minor_node.is_none() {
+            return None;
+        }
+
+        if patch.is_none() {
+            match minor_node.unwrap().get_max_child() {
+                Some(patch_node) => { return patch_node.store.as_ref(); },
+                None => { return None; }
+            }
+        }
+
+        if let &"x" = patch.unwrap() {
+            match minor_node.unwrap().get_max_child() {
+                Some(patch_node) => { return patch_node.store.as_ref(); },
+                None => { return None; }
+            }
+        }
+
+        match minor_node.unwrap().get_child(int(&patch.unwrap())) {
+            Some(patch_node) => { return patch_node.store.as_ref(); },
+            None => { return None; }
+        }
     }
 
     pub fn del(&mut self, version: String) -> bool {
@@ -147,6 +181,11 @@ mod node_tests {
         let mut store = SemverStore::<i32>::new();
         store.set("1.0.0".to_string(), 1);
         assert_eq!(store.get("1.2.0".to_string()), None);
+        assert_eq!(store.get("1.0.1".to_string()), None);
+        assert_eq!(store.get("1.1.x".to_string()), None);
+        assert_eq!(store.get("2.0.0".to_string()), None);
+        assert_eq!(store.get("2.1".to_string()), None);
+        assert_eq!(store.get("2.x".to_string()), None);
     }
 
     #[test]
@@ -236,5 +275,29 @@ mod node_tests {
         assert_eq!(store.tree.children.len(), 2);
         assert_eq!(store.del("2.x".to_string()), true);
         assert_eq!(store.tree.children.len(), 1);
+    }
+
+    #[test]
+    fn get_patch_wildcard_shortcut() {
+        let mut store = SemverStore::<i32>::new();
+        store.set("1.0.1".to_string(), 1);
+        store.set("1.0.2".to_string(), 2);
+        store.set("1.0.3".to_string(), 3);
+        store.set("2.0.0".to_string(), 4);
+
+        assert_eq!(store.get("1.0.x".to_string()).unwrap(), &3);
+        assert_eq!(store.get("1.0".to_string()).unwrap(), &3);
+    }
+
+    #[test]
+    fn get_minor_wildcard() {
+        let mut store = SemverStore::<i32>::new();
+        store.set("1.0.1".to_string(), 1);
+        store.set("1.1.2".to_string(), 2);
+        store.set("1.2.3".to_string(), 3);
+        store.set("2.0.0".to_string(), 4);
+
+        assert_eq!(store.get("1.1".to_string()).unwrap(), &2);
+        assert_eq!(store.get("1.x".to_string()).unwrap(), &3);
     }
 }
