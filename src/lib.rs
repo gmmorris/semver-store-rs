@@ -159,7 +159,7 @@ mod node_tests {
         store.set("1.3.0".to_string(), 4);
 
         // the node with prefix `1` should have 4 children
-        assert_eq!(store.tree.children[0].children.len(), 4);
+        assert_eq!(store.tree.children.get(&1).unwrap().children.len(), 4);
         assert_eq!(store.get("1.0.0".to_string()).unwrap(), &1);
         assert_eq!(store.get("1.1.0".to_string()).unwrap(), &2);
         assert_eq!(store.get("1.2.0".to_string()).unwrap(), &3);
@@ -178,8 +178,8 @@ mod node_tests {
         store.set("2.2.0".to_string(), 23);
         store.set("2.3.0".to_string(), 24);
 
-        assert_eq!(store.tree.children[0].children.len(), 3);
-        assert_eq!(store.tree.children[1].children.len(), 4);
+        assert_eq!(store.tree.children.get(&1).unwrap().children.len(), 3);
+        assert_eq!(store.tree.children.get(&2).unwrap().children.len(), 4);
 
         assert_eq!(store.get("1.1.0".to_string()).unwrap(), &11);
         assert_eq!(store.get("1.2.0".to_string()).unwrap(), &12);
@@ -199,9 +199,9 @@ mod node_tests {
         store.set("1.2.0".to_string(), 3);
         store.set("1.3.0".to_string(), 4);
 
-        assert_eq!(store.tree.children[0].children.len(), 4);
+        assert_eq!(store.tree.children.get(&1).unwrap().children.len(), 4);
         assert_eq!(store.del("1.2.0".to_string()), true);
-        assert_eq!(store.tree.children[0].children.len(), 3);
+        assert_eq!(store.tree.children.get(&1).unwrap().children.len(), 3);
     }
 
     #[test]
@@ -215,11 +215,11 @@ mod node_tests {
         store.set("1.2.1".to_string(), 6);
         store.set("1.2.2".to_string(), 7);
 
-        assert_eq!(store.tree.children[0].children.len(), 3);
+        assert_eq!(store.tree.children.get(&1).unwrap().children.len(), 3);
         assert_eq!(store.del("1.1.x".to_string()), true);
-        assert_eq!(store.tree.children[0].children.len(), 2);
+        assert_eq!(store.tree.children.get(&1).unwrap().children.len(), 2);
         assert_eq!(store.del("1.2".to_string()), true);
-        assert_eq!(store.tree.children[0].children.len(), 1);
+        assert_eq!(store.tree.children.get(&1).unwrap().children.len(), 1);
     }
 
     #[test]
