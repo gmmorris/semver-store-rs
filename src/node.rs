@@ -19,10 +19,12 @@ impl<T> Node<T> {
         self.children.get_mut(&prefix)
     }
 
-    pub fn add_child(&mut self, node: Node<T>) {
-        if self.children.contains_key(&node.prefix) == false {
-            self.children.insert(node.prefix, node);
+    pub fn add_child(&mut self, node: Node<T>) -> &mut Node<T> {
+        let prefix = node.prefix;
+        if self.children.contains_key(&prefix) == false {
+            self.children.insert(prefix, node);
         }
+        self.get_child(prefix).unwrap()
     }
 
     pub fn remove_child(&mut self, prefix: u32) -> bool {
@@ -55,12 +57,9 @@ mod semver_store_tests {
         let mut root = Node::new(1);
         let mut node = Node::new(2);
         node.set_store(10);
-        root.add_child(node);
-
-        match root.get_child(2) {
-            Some(child) => assert_eq!(child.store, Some(10)),
-            None => panic!("Should have a value"),
-        }
+        // should return a mutable reference of the child
+        let child = root.add_child(node);
+        assert_eq!(child.store, Some(10));
     }
 
     #[test]

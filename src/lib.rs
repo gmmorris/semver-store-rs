@@ -17,8 +17,7 @@ impl<T> SemverStore<T> {
         for v in semver {
             let version_number = v.parse::<u32>().unwrap();
             let node = node::Node::new(version_number);
-            current_node.add_child(node);
-            current_node = current_node.get_child(version_number).unwrap();
+            current_node = current_node.add_child(node);
         }
         current_node.set_store(store);
     }
