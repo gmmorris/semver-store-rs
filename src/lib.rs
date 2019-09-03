@@ -167,7 +167,7 @@ impl<T> SemverStore<T> {
     }
 
     pub fn empty(&mut self) {
-        unimplemented!()
+        self.tree = node::Node::new(0);
     }
 }
 
@@ -186,10 +186,10 @@ mod node_tests {
     }
 
     #[test]
-    fn store_an_integer() {
-        let mut store = SemverStore::<i32>::new();
-        store.set("1.0.0".to_string(), 1);
-        assert_eq!(store.get("1.0.0".to_string()).unwrap(), &1);
+    fn store_a_string() {
+        let mut store = SemverStore::<String>::new();
+        store.set("1.0.0".to_string(), "hello".to_string());
+        assert_eq!(store.get("1.0.0".to_string()).unwrap(), &"hello");
     }
 
     #[test]
@@ -315,5 +315,14 @@ mod node_tests {
 
         assert_eq!(store.get("1.1".to_string()).unwrap(), &2);
         assert_eq!(store.get("1.x".to_string()).unwrap(), &3);
+    }
+
+    #[test]
+    fn empty_store() {
+        let mut store = SemverStore::<String>::new();
+        store.set("1.0.0".to_string(), "hello".to_string());
+        assert_eq!(store.get("1.0.0".to_string()).unwrap(), &"hello");
+        store.empty();
+        assert_eq!(store.get("1.0.0".to_string()), None);
     }
 }
