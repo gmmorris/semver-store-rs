@@ -27,10 +27,17 @@ impl<T> Node<T> {
         self.get_child(prefix).unwrap()
     }
 
+    pub fn get_max_child(&mut self) -> Option<&mut Node<T>> {
+        match self.children.keys().max() {
+            Some(max) => self.get_child(*max),
+            None => None
+        }
+    }
+
     pub fn remove_child(&mut self, prefix: u32) -> bool {
         match self.children.remove(&prefix) {
             Some(_node) => true,
-            None => false
+            None => false,
         }
     }
 
@@ -114,5 +121,24 @@ mod semver_store_tests {
         child.add_child(node2);
 
         assert_eq!(child.children.len(), 1);
+    }
+
+    #[test]
+    fn get_the_max_child() {
+        let mut root = Node::new(1);
+        let mut node1 = Node::new(2);
+        let mut node2 = Node::new(3);
+        let mut node3 = Node::new(4);
+
+        node1.set_store(11);
+        node2.set_store(12);
+        node3.set_store(13);
+
+        root.add_child(node1);
+        root.add_child(node2);
+        root.add_child(node3);
+
+        assert_eq!(root.children.len(), 3);
+        assert_eq!(root.get_max_child().unwrap().prefix, 4);
     }
 }
