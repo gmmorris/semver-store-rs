@@ -1,7 +1,17 @@
 [package]
 name = "semver-store"
 version = "0.1.0"
-authors = ["delvedor <tommydelved@gmail.com>"]
+authors = ["Tomas Della Vedova"]
 edition = "2018"
+license = "MIT"
+keywords = ["semver", "hashmap", "store"]
+categories = ["caching", "data-structures"]
+documentation = "https://github.com/delvedor/semver-store-rs.git"
+homepage = "https://github.com/delvedor/semver-store-rs.git"
+repository = "https://github.com/delvedor/semver-store-rs.git"
+description = "An HashMap structure that uses semver strings as keys."
+
+[badges]
+maintenance = { status = "experimental" }
 
 [dependencies]
