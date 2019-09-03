@@ -30,7 +30,7 @@ impl<T> Node<T> {
     pub fn get_max_child(&mut self) -> Option<&mut Node<T>> {
         match self.children.keys().max() {
             Some(max) => self.get_child(*max),
-            None => None
+            None => None,
         }
     }
 

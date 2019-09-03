@@ -40,8 +40,12 @@ impl<T> SemverStore<T> {
                 return None;
             }
             match minor_node.unwrap().get_max_child() {
-                Some(patch_node) => { return patch_node.store.as_ref(); },
-                None => { return None; }
+                Some(patch_node) => {
+                    return patch_node.store.as_ref();
+                }
+                None => {
+                    return None;
+                }
             }
         }
 
@@ -52,21 +56,33 @@ impl<T> SemverStore<T> {
 
         if patch.is_none() {
             match minor_node.unwrap().get_max_child() {
-                Some(patch_node) => { return patch_node.store.as_ref(); },
-                None => { return None; }
+                Some(patch_node) => {
+                    return patch_node.store.as_ref();
+                }
+                None => {
+                    return None;
+                }
             }
         }
 
         if let &"x" = patch.unwrap() {
             match minor_node.unwrap().get_max_child() {
-                Some(patch_node) => { return patch_node.store.as_ref(); },
-                None => { return None; }
+                Some(patch_node) => {
+                    return patch_node.store.as_ref();
+                }
+                None => {
+                    return None;
+                }
             }
         }
 
         match minor_node.unwrap().get_child(int(&patch.unwrap())) {
-            Some(patch_node) => { return patch_node.store.as_ref(); },
-            None => { return None; }
+            Some(patch_node) => {
+                return patch_node.store.as_ref();
+            }
+            None => {
+                return None;
+            }
         }
     }
 
